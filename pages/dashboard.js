@@ -10,8 +10,12 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const callGetTodo = async () => {
+    const token = localStorage.getItem("token");
     try {
-      const resp = await axios.get("/api/todo");
+      const resp = await axios.get("/api/todo", {
+        headers: { Authorization: `bearer ${token}` },
+      });
+
       if (resp.data.ok) setTodos(resp.data.todolist);
     } catch (err) {
       console.log(err.response.data.mesasge);
@@ -19,11 +23,18 @@ export default function DashboardPage() {
   };
 
   const callPostTodo = async () => {
+    const token = localStorage.getItem("token");
     try {
-      const resp = await axios.post("/api/todo", {
-        title: todoText,
-        completed: false,
-      });
+      const resp = await axios.post(
+        "/api/todo",
+        {
+          title: todoText,
+          completed: false,
+        },
+        {
+          headers: { Authorization: `bearer ${token}` },
+        }
+      );
       if (resp.data.ok) await callGetTodo();
     } catch (err) {
       alert(err.response.data.message);
@@ -31,8 +42,11 @@ export default function DashboardPage() {
   };
 
   const callDeleteTodo = async (id) => {
+    const token = localStorage.getItem("token");
     try {
-      const resp = await axios.delete(`/api/todo/${id}`);
+      const resp = await axios.delete(`/api/todo/${id}`, {
+        headers: { Authorization: `bearer ${token}` },
+      });
       if (resp.data.ok) await callGetTodo();
     } catch (err) {
       alert(err.response.data.message);
@@ -40,22 +54,44 @@ export default function DashboardPage() {
   };
 
   const callPutTodo = async (id, completed) => {
+    const token = localStorage.getItem("token");
     try {
-      const resp = await axios.put(`/api/todo/${id}`, {
-        completed,
-      });
+      const resp = await axios.put(
+        `/api/todo/${id}`,
+        {
+          completed,
+        },
+        {
+          headers: { Authorization: `bearer ${token}` },
+        }
+      );
       if (resp.data.ok) callGetTodo();
     } catch (err) {
       alert(err.response.data.message);
     }
   };
 
+  const callUserTestToken = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const resp = await axios.get("/api/user/testToken", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (resp.data.ok) {
+        setUsername(resp.data.username);
+        callGetTodo();
+      }
+    } catch (err) {
+      alert(err.response.data.message);
+    }
+  };
   useEffect(() => {
-    callGetTodo();
+    callUserTestToken();
   }, []);
 
   return (
     <div>
+      <p>Hi {username} !</p>
       <input
         placeholder="Insert new todo..."
         onChange={(e) => setTodoText(e.target.value)}
@@ -74,6 +110,8 @@ export default function DashboardPage() {
             {x.title}
             <button
               onClick={() => {
+                localStorage.removeItem("token");
+                router.push("/");
                 callPutTodo(x.id, !x.completed);
               }}
             >
